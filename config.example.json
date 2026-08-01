@@ -1,0 +1,15 @@
+{
+  "discord": {
+    "guild_id": "guild_id"
+  },
+  "evidence": {
+    "intake_channel_id": "intake_channel_id",
+    "review_channel_id": "review_channel_id",
+    "reviewer_role_ids": [
+      "id_role_1",
+      "id_role_2",
+      "id_role_3",
+      "id_role_4"
+    ]
+  }
+}

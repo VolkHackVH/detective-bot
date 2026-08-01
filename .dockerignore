@@ -1,0 +1,10 @@
+.git
+.idea
+.env
+data
+*.db
+*.db-shm
+*.db-wal
+Dockerfile*
+docker-compose*.yml
+docker-compose*.yaml

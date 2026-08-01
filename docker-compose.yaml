@@ -1,0 +1,22 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: detective-bot
+    restart: unless-stopped
+    init: true
+
+    env_file:
+      - .env
+
+    environment:
+      DATABASE_PATH: /app/data/evidence.db
+
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - evidence-data:/app/data
+
+volumes:
+  evidence-data:

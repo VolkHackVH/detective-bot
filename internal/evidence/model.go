@@ -1,33 +1,33 @@
 package evidence
 
-import "github.com/bwmarrin/discordgo"
+type Status string
 
-func (h *Handler) OnInteraction(
-	session *discordgo.Session,
-	interaction *discordgo.InteractionCreate,
-) {
-	switch interaction.Type {
-	case discordgo.InteractionMessageComponent:
-		h.handleMessageComponent(session, interaction)
+const (
+	StatusSubmitted Status = "submitted"
+	StatusInReview  Status = "in_review"
+	StatusAccepted  Status = "accepted"
+	StatusRejected  Status = "rejected"
+)
 
-	case discordgo.InteractionModalSubmit:
-		h.handleModalSubmit(session, interaction)
-	}
+type Evidence struct {
+	ID                int64
+	AuthorDiscordID   string
+	GuildID           string
+	NicknameStatic    string
+	ProofURL          string
+	Timecodes         string
+	FactionFamily     string
+	Status            Status
+	ReviewerDiscordID *string
+	ReviewChannelID   *string
+	ReviewMessageID   *string
 }
 
-func (h *Handler) handleMessageComponent(
-	session *discordgo.Session,
-	interaction *discordgo.InteractionCreate,
-) {
-	customID := interaction.MessageComponentData().CustomID
-
-	switch customID {
-	case createEvidenceButtonID:
-		if err := session.InteractionRespond(
-			interaction.Interaction,
-			evidenceModal(),
-		); err != nil {
-			slog.Error("cannot show evidence modal", "error", err)
-		}
-	}
+type CreateEvidence struct {
+	AuthorDiscordID string
+	GuildID         string
+	NicknameStatic  string
+	ProofURL        string
+	Timecodes       string
+	FactionFamily   string
 }
