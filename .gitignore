@@ -1,4 +1,4 @@
-./idea/
+./idea
 .env
-/config.json
+config.json
 ./data/
