@@ -1,6 +1,8 @@
 package evidence
 
 import (
+	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -66,6 +68,26 @@ func evidenceModal() *discordgo.InteractionResponse {
 					discordgo.TextInputShort,
 					1,
 					100,
+				),
+			},
+		},
+	}
+}
+
+func rejectionModal(evidenceID int64) *discordgo.InteractionResponse {
+	return &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseModal,
+		Data: &discordgo.InteractionResponseData{
+			CustomID: fmt.Sprintf("evidence:reject_submit:%d", evidenceID),
+			Title:    fmt.Sprintf("Отклонение улики №%d", evidenceID),
+			Components: []discordgo.MessageComponent{
+				textInputRow(
+					"rejection_reason",
+					"Причина отклонения",
+					"Опишите причину отклонения улики",
+					discordgo.TextInputParagraph,
+					3,
+					1000,
 				),
 			},
 		},

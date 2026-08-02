@@ -19,6 +19,7 @@ status TEXT NOT NULL DEFAULT 'submitted'
                      )),
 
 reviewer_discord_id TEXT,
+rejection_reason TEXT,
 
 review_channel_id TEXT,
 review_message_id TEXT,

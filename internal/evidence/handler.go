@@ -133,7 +133,7 @@ func (h *Handler) handleMessageComponent(
 	case strings.HasPrefix(customID, "evidence:accept:"):
 		h.handleResolve(session, interaction, StatusAccepted)
 	case strings.HasPrefix(customID, "evidence:reject:"):
-		h.handleResolve(session, interaction, StatusRejected)
+		h.handleReject(session, interaction)
 	}
 }
 
@@ -151,7 +151,12 @@ func (h *Handler) handleModalSubmit(
 	session *discordgo.Session,
 	interaction *discordgo.InteractionCreate,
 ) {
-	if interaction.ModalSubmitData().CustomID != submitEvidenceModalID {
+	customID := interaction.ModalSubmitData().CustomID
+	if strings.HasPrefix(customID, "evidence:reject_submit:") {
+		h.handleRejectModalSubmit(session, interaction)
+		return
+	}
+	if customID != submitEvidenceModalID {
 		return
 	}
 
@@ -235,6 +240,29 @@ func (h *Handler) handleModalSubmit(
 	)
 }
 
+func (h *Handler) handleReject(
+	session *discordgo.Session,
+	interaction *discordgo.InteractionCreate,
+) {
+	if !h.isReviewer(interaction.Member) {
+		respondEphemeral(session, interaction, "У вас нет роли проверяющего.")
+		return
+	}
+
+	evidenceID, err := parseEvidenceID(interaction.MessageComponentData().CustomID)
+	if err != nil {
+		respondEphemeral(session, interaction, "Некорректный номер улики.")
+		return
+	}
+
+	if err := session.InteractionRespond(
+		interaction.Interaction,
+		rejectionModal(evidenceID),
+	); err != nil {
+		slog.Error("cannot show rejection modal", "evidence_id", evidenceID, "error", err)
+	}
+}
+
 func (h *Handler) handleClaim(
 	session *discordgo.Session,
 	interaction *discordgo.InteractionCreate,
@@ -301,7 +329,7 @@ func (h *Handler) handleResolve(
 	ctx, cancel := context.WithTimeout(context.Background(), interactionTimeout)
 	defer cancel()
 
-	item, resolved, err := h.repo.Resolve(ctx, evidenceID, reviewerID, finalStatus)
+	item, resolved, err := h.repo.Resolve(ctx, evidenceID, reviewerID, finalStatus, "")
 	if err != nil {
 		slog.Error("cannot resolve evidence", "evidence_id", evidenceID, "error", err)
 		respondEphemeral(session, interaction, "Не удалось изменить статус улики.")
@@ -311,7 +339,7 @@ func (h *Handler) handleResolve(
 		respondEphemeral(
 			session,
 			interaction,
-			"Закрыть улику может только проверяющий, который взял её в работу.",
+			"Эта улика уже была обработана другим проверяющим.",
 		)
 		return
 	}
@@ -330,6 +358,92 @@ func (h *Handler) handleResolve(
 		session,
 		item.AuthorDiscordID,
 		fmt.Sprintf("Ваша улика `№%d` %s.", item.ID, result),
+	)
+}
+
+func (h *Handler) handleRejectModalSubmit(
+	session *discordgo.Session,
+	interaction *discordgo.InteractionCreate,
+) {
+	if !h.isReviewer(interaction.Member) {
+		respondEphemeral(session, interaction, "У вас нет роли проверяющего.")
+		return
+	}
+
+	evidenceID, err := parseEvidenceID(interaction.ModalSubmitData().CustomID)
+	if err != nil {
+		respondEphemeral(session, interaction, "Некорректный номер улики.")
+		return
+	}
+
+	reason := modalValues(interaction.ModalSubmitData())["rejection_reason"]
+	if reason == "" {
+		respondEphemeral(session, interaction, "Укажите причину отклонения.")
+		return
+	}
+
+	reviewerID := interactionUserID(interaction)
+	if reviewerID == "" {
+		respondEphemeral(session, interaction, "Не удалось определить проверяющего.")
+		return
+	}
+
+	if err := deferEphemeral(session, interaction); err != nil {
+		slog.Error("cannot defer rejection response", "evidence_id", evidenceID, "error", err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), interactionTimeout)
+	item, resolved, err := h.repo.Resolve(
+		ctx,
+		evidenceID,
+		reviewerID,
+		StatusRejected,
+		reason,
+	)
+	cancel()
+	if err != nil {
+		slog.Error("cannot reject evidence", "evidence_id", evidenceID, "error", err)
+		editDeferredResponse(session, interaction, "Не удалось отклонить улику.")
+		return
+	}
+	if !resolved {
+		editDeferredResponse(
+			session,
+			interaction,
+			"Эта улика уже была обработана другим проверяющим.",
+		)
+		return
+	}
+
+	if err = updateStoredEvidenceMessage(session, item); err != nil {
+		slog.Error("cannot update rejected evidence message", "evidence_id", evidenceID, "error", err)
+		editDeferredResponse(
+			session,
+			interaction,
+			"Улика отклонена, но сообщение в канале не удалось обновить.",
+		)
+		return
+	}
+
+	if err := session.InteractionResponseDelete(
+		interaction.Interaction,
+	); err != nil {
+		slog.Error(
+			"cannot delete rejection response",
+			"evidence_id", item.ID,
+			"error", err,
+		)
+	}
+
+	h.sendDM(
+		session,
+		item.AuthorDiscordID,
+		fmt.Sprintf(
+			"Ваша улика `№%d` (❌ **отклонена**).\n\n**Причина:** %s",
+			item.ID,
+			reason,
+		),
 	)
 }
 
@@ -488,6 +602,26 @@ func updateInteractionMessage(
 	)
 }
 
+func updateStoredEvidenceMessage(
+	session *discordgo.Session,
+	item *Evidence,
+) error {
+	if item.ReviewChannelID == nil || item.ReviewMessageID == nil {
+		return errors.New("review message location is missing")
+	}
+
+	embeds := []*discordgo.MessageEmbed{evidenceEmbed(item)}
+	components := evidenceButtons(item)
+
+	_, err := session.ChannelMessageEditComplex(&discordgo.MessageEdit{
+		Channel:    *item.ReviewChannelID,
+		ID:         *item.ReviewMessageID,
+		Embeds:     &embeds,
+		Components: &components,
+	})
+	return err
+}
+
 func evidenceButtons(item *Evidence) []discordgo.MessageComponent {
 	claimDisabled := item.Status != StatusSubmitted
 	decisionDisabled := item.Status != StatusInReview
@@ -540,6 +674,13 @@ func evidenceEmbed(item *Evidence) *discordgo.MessageEmbed {
 		{Name: "Тайм-коды", Value: item.Timecodes},
 		{Name: "Фракция / Семья", Value: item.FactionFamily},
 		{Name: "Статус проверки", Value: status},
+	}
+
+	if item.Status == StatusRejected && item.RejectionReason != nil {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:  "Причина отклонения",
+			Value: *item.RejectionReason,
+		})
 	}
 
 	if item.ReviewerDiscordID != nil {

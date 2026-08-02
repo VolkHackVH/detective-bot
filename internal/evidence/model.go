@@ -19,6 +19,7 @@ type Evidence struct {
 	FactionFamily     string
 	Status            Status
 	ReviewerDiscordID *string
+	RejectionReason   *string
 	ReviewChannelID   *string
 	ReviewMessageID   *string
 }

@@ -80,6 +80,7 @@ func (r *Repository) Resolve(
 	evidenceID int64,
 	reviewerID string,
 	status Status,
+	rejectionReason string,
 ) (*Evidence, bool, error) {
 	if status != StatusAccepted && status != StatusRejected {
 		return nil, false, fmt.Errorf(
@@ -93,12 +94,14 @@ func (r *Repository) Resolve(
 		SET
 			status = ?,
 			reviewer_discord_id = ?,
+			rejection_reason = NULLIF(?, ''),
 			resolved_at = CURRENT_TIMESTAMP
 		WHERE id = ?
 		  AND status = 'in_review'
 	`,
 		status,
 		reviewerID,
+		rejectionReason,
 		evidenceID,
 	)
 	if err != nil {
@@ -121,6 +124,7 @@ func (r *Repository) GetByID(
 ) (*Evidence, error) {
 	var item Evidence
 	var reviewerID sql.NullString
+	var rejectionReason sql.NullString
 	var channelID sql.NullString
 	var messageID sql.NullString
 
@@ -135,6 +139,7 @@ func (r *Repository) GetByID(
             faction_family,
             status,
             reviewer_discord_id,
+			rejection_reason,
             review_channel_id,
             review_message_id
         FROM evidence
@@ -149,6 +154,7 @@ func (r *Repository) GetByID(
 		&item.FactionFamily,
 		&item.Status,
 		&reviewerID,
+		&rejectionReason,
 		&channelID,
 		&messageID,
 	)
@@ -158,6 +164,9 @@ func (r *Repository) GetByID(
 
 	if reviewerID.Valid {
 		item.ReviewerDiscordID = &reviewerID.String
+	}
+	if rejectionReason.Valid {
+		item.RejectionReason = &rejectionReason.String
 	}
 	if channelID.Valid {
 		item.ReviewChannelID = &channelID.String
