@@ -5,15 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c7954385-ec3a-432f-9c36-2167cee165af" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/DB-majestic.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/database/migrate.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/database/migrate.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/database/schema.sql" beforeDir="false" afterPath="$PROJECT_DIR$/internal/database/schema.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/evidence/components.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/evidence/components.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/evidence/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/evidence/handler.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/evidence/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/evidence/model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/evidence/repository.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/evidence/repository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
