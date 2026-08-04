@@ -17,13 +17,6 @@ import (
 	"github.com/VolkHackVH/detective-bot.git/internal/evidence"
 )
 
-var commands = []*discordgo.ApplicationCommand{
-	{
-		Name:        "ping",
-		Description: "Проверить работу бота",
-	},
-}
-
 func main() {
 	_ = godotenv.Load()
 
@@ -75,20 +68,6 @@ func main() {
 		log.Fatalf("Error connecting Discord: %v", err)
 	}
 	defer session.Close()
-
-	for _, command := range commands {
-		if _, err := session.ApplicationCommandCreate(
-			session.State.User.ID,
-			cfg.Discord.GuildID,
-			command,
-		); err != nil {
-			log.Fatalf(
-				"Error creating command %s: %v",
-				command.Name,
-				err,
-			)
-		}
-	}
 
 	slog.Info(
 		"Bot is running",
