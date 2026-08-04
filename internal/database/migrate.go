@@ -28,6 +28,28 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		}
 	}
 
+	hasIncidentDatetime, err := columnExists(
+		ctx,
+		db,
+		"evidence",
+		"incident_datetime",
+	)
+	if err != nil {
+		return err
+	}
+
+	if !hasIncidentDatetime {
+		if _, err := db.ExecContext(
+			ctx,
+			`ALTER TABLE evidence ADD COLUMN incident_datetime TEXT`,
+		); err != nil {
+			return fmt.Errorf(
+				"add evidence.incident_datetime: %w",
+				err,
+			)
+		}
+	}
+
 	return nil
 }
 

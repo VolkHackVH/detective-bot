@@ -46,6 +46,14 @@ func evidenceModal() *discordgo.InteractionResponse {
 					100,
 				),
 				textInputRow(
+					"incident_datetime",
+					"Дата и время записи улики",
+					"01.01.2026 21:00",
+					discordgo.TextInputShort,
+					16,
+					16,
+				),
+				textInputRow(
 					"proof_url",
 					"Доказательство (ссылка)",
 					"https://...",

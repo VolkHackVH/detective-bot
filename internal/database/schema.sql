@@ -1,16 +1,17 @@
 CREATE TABLE IF NOT EXISTS evidence (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
 
- author_discord_id TEXT NOT NULL,
- guild_id TEXT NOT NULL,
+  author_discord_id TEXT NOT NULL,
+  guild_id TEXT NOT NULL,
 
- nickname_static TEXT NOT NULL,
- proof_url TEXT NOT NULL,
- timecodes TEXT NOT NULL,
- faction_family TEXT NOT NULL,
+  nickname_static TEXT NOT NULL,
+  incident_datetime TEXT NOT NULL,
+  proof_url TEXT NOT NULL,
+  timecodes TEXT NOT NULL,
+  faction_family TEXT NOT NULL,
 
-status TEXT NOT NULL DEFAULT 'submitted'
-    CHECK (status IN (
+  status TEXT NOT NULL DEFAULT 'submitted'
+      CHECK (status IN (
                       'submitted',
                       'in_review',
                       'accepted',
@@ -18,15 +19,15 @@ status TEXT NOT NULL DEFAULT 'submitted'
                       'publish_failed'
                      )),
 
-reviewer_discord_id TEXT,
-rejection_reason TEXT,
+  reviewer_discord_id TEXT,
+  rejection_reason TEXT,
 
-review_channel_id TEXT,
-review_message_id TEXT,
+  review_channel_id TEXT,
+  review_message_id TEXT,
 
-created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-claimed_at TEXT,
-resolved_at TEXT
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  claimed_at TEXT,
+  resolved_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_evidence_status

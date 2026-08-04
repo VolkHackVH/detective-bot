@@ -178,12 +178,13 @@ func (h *Handler) handleModalSubmit(
 
 	ctx, cancel := context.WithTimeout(context.Background(), interactionTimeout)
 	item, err := h.repo.Create(ctx, CreateEvidence{
-		AuthorDiscordID: authorID,
-		GuildID:         interaction.GuildID,
-		NicknameStatic:  values["nickname_static"],
-		ProofURL:        values["proof_url"],
-		Timecodes:       values["timecodes"],
-		FactionFamily:   values["faction_family"],
+		AuthorDiscordID:  authorID,
+		GuildID:          interaction.GuildID,
+		NicknameStatic:   values["nickname_static"],
+		ProofURL:         values["proof_url"],
+		Timecodes:        values["timecodes"],
+		FactionFamily:    values["faction_family"],
+		IncidentDatetime: values["incident_datetime"],
 	})
 	cancel()
 	if err != nil {
@@ -501,6 +502,7 @@ func modalValues(data discordgo.ModalSubmitInteractionData) map[string]string {
 func validateEvidence(values map[string]string) error {
 	required := []string{
 		"nickname_static",
+		"incident_datetime",
 		"proof_url",
 		"timecodes",
 		"faction_family",
@@ -514,6 +516,15 @@ func validateEvidence(values map[string]string) error {
 	proofURL, err := url.ParseRequestURI(values["proof_url"])
 	if err != nil || (proofURL.Scheme != "http" && proofURL.Scheme != "https") {
 		return errors.New("поле «Доказательство» должно содержать HTTP/HTTPS-ссылку")
+	}
+
+	if _, err := time.Parse(
+		"02.01.2006 15:04",
+		values["incident_datetime"],
+	); err != nil {
+		return errors.New(
+			"дата и время должны быть в формате ДД.ММ.ГГГГ ЧЧ:ММ",
+		)
 	}
 
 	return nil
@@ -668,13 +679,53 @@ func evidenceEmbed(item *Evidence) *discordgo.MessageEmbed {
 		color = 0xE74C3C
 	}
 
-	fields := []*discordgo.MessageEmbedField{
-		{Name: "Никнейм | статик", Value: item.NicknameStatic},
-		{Name: "Доказательство", Value: item.ProofURL},
-		{Name: "Тайм-коды", Value: item.Timecodes},
-		{Name: "Фракция / Семья", Value: item.FactionFamily},
-		{Name: "Статус проверки", Value: status},
+	fields := make([]*discordgo.MessageEmbedField, 0)
+
+	if item.IncidentDatetime != "" {
+		fields = append(
+			fields,
+			&discordgo.MessageEmbedField{
+				Name:   "Никнейм | статик",
+				Value:  item.NicknameStatic,
+				Inline: true,
+			},
+			&discordgo.MessageEmbedField{
+				Name:   "Дата и время",
+				Value:  fmt.Sprintf("`%s`", item.IncidentDatetime),
+				Inline: true,
+			},
+		)
+	} else {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   "Никнейм | статик",
+			Value:  item.NicknameStatic,
+			Inline: false,
+		})
 	}
+
+	fields = append(
+		fields,
+		&discordgo.MessageEmbedField{
+			Name:   "Доказательство",
+			Value:  item.ProofURL,
+			Inline: false,
+		},
+		&discordgo.MessageEmbedField{
+			Name:   "Тайм-коды",
+			Value:  item.Timecodes,
+			Inline: false,
+		},
+		&discordgo.MessageEmbedField{
+			Name:   "Фракция / Семья",
+			Value:  item.FactionFamily,
+			Inline: false,
+		},
+		&discordgo.MessageEmbedField{
+			Name:   "Статус проверки",
+			Value:  status,
+			Inline: false,
+		},
+	)
 
 	if item.Status == StatusRejected && item.RejectionReason != nil {
 		fields = append(fields, &discordgo.MessageEmbedField{

@@ -14,6 +14,7 @@ type Evidence struct {
 	AuthorDiscordID   string
 	GuildID           string
 	NicknameStatic    string
+	IncidentDatetime  string
 	ProofURL          string
 	Timecodes         string
 	FactionFamily     string
@@ -25,10 +26,11 @@ type Evidence struct {
 }
 
 type CreateEvidence struct {
-	AuthorDiscordID string
-	GuildID         string
-	NicknameStatic  string
-	ProofURL        string
-	Timecodes       string
-	FactionFamily   string
+	AuthorDiscordID  string
+	GuildID          string
+	NicknameStatic   string
+	IncidentDatetime string
+	ProofURL         string
+	Timecodes        string
+	FactionFamily    string
 }

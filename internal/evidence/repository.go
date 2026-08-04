@@ -20,18 +20,20 @@ func (r *Repository) Create(
 ) (*Evidence, error) {
 	result, err := r.db.ExecContext(ctx, `
         INSERT INTO evidence (
-            author_discord_id,
-            guild_id,
-            nickname_static,
-            proof_url,
+			author_discord_id,
+			guild_id,
+			nickname_static,
+			incident_datetime,
+			proof_url,
             timecodes,
             faction_family
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
 		input.AuthorDiscordID,
 		input.GuildID,
 		input.NicknameStatic,
+		input.IncidentDatetime,
 		input.ProofURL,
 		input.Timecodes,
 		input.FactionFamily,
@@ -127,6 +129,7 @@ func (r *Repository) GetByID(
 	var rejectionReason sql.NullString
 	var channelID sql.NullString
 	var messageID sql.NullString
+	var incidentDatetime sql.NullString
 
 	err := r.db.QueryRowContext(ctx, `
         SELECT
@@ -134,6 +137,7 @@ func (r *Repository) GetByID(
             author_discord_id,
             guild_id,
             nickname_static,
+            incident_datetime,
             proof_url,
             timecodes,
             faction_family,
@@ -149,6 +153,7 @@ func (r *Repository) GetByID(
 		&item.AuthorDiscordID,
 		&item.GuildID,
 		&item.NicknameStatic,
+		&incidentDatetime,
 		&item.ProofURL,
 		&item.Timecodes,
 		&item.FactionFamily,
@@ -173,6 +178,9 @@ func (r *Repository) GetByID(
 	}
 	if messageID.Valid {
 		item.ReviewMessageID = &messageID.String
+	}
+	if incidentDatetime.Valid {
+		item.IncidentDatetime = incidentDatetime.String
 	}
 
 	return &item, nil
